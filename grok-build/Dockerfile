@@ -1,5 +1,5 @@
 # Grok Build — minimal sandboxed image
-FROM python:3.14-slim-bookworm
+FROM python:slim-bookworm
 
 # Installer + agent need these; the slim image ships almost nothing
 RUN apt-get update && apt-get install -y --no-install-recommends \
