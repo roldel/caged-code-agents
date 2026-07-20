@@ -1,6 +1,12 @@
 # Grok Build — minimal sandboxed image
 FROM python:slim-bookworm
 
+ARG USER_ID
+ARG GROUP_ID
+
+RUN test -n "${USER_ID}" && test -n "${GROUP_ID}" || \
+    { echo >&2 "ERROR: build with --build-arg USER_ID=\$(id -u) --build-arg GROUP_ID=\$(id -g)"; exit 1; }
+
 # Installer + agent need these; the slim image ships almost nothing
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -9,12 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user owning the workspace
-RUN useradd -m -s /bin/bash agent && \
-    mkdir -p /workspace && \
-    chown -R agent:agent /workspace
+RUN (getent group ${GROUP_ID} || groupadd -g ${GROUP_ID} agent) && \
+    useradd -m -u ${USER_ID} -g ${GROUP_ID} -s /bin/bash agent
 
 USER agent
-WORKDIR /workspace
 
 # Install the Grok Build CLI
 RUN curl -fsSL https://x.ai/cli/install.sh | bash
