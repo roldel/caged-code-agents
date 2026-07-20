@@ -4,7 +4,7 @@ set -euo pipefail
 # Comma-separated list of Ollama model IDs to expose, e.g.:
 #   OPENCODE_MODELS="ornith:latest,gpt-oss:20b,gemma4:12b-mlx"
 # Tags must match `ollama list` exactly, colon included.
-: "${OPENCODE_MODELS:=ornith:latest}"
+: "${OPENCODE_MODELS:=ornith:9b}"
 
 # Which model is preselected on launch. Defaults to the first in the list.
 : "${OPENCODE_DEFAULT_MODEL:=}"
