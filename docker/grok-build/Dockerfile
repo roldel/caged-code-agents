@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Non-root user owning the workspace
+# Non-root user matching the host UID/GID (fail-loud args above)
 RUN (getent group ${GROUP_ID} || groupadd -g ${GROUP_ID} agent) && \
     useradd -m -u ${USER_ID} -g ${GROUP_ID} -s /bin/bash agent
 

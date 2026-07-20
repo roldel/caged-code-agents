@@ -1,9 +1,9 @@
-# Grok Build — sandboxed
+# Claude Code — sandboxed
 
 ## Build
 
 ```sh
-podman build -t cca-grok-build .
+podman build -t cca-claude-code .
 ```
 
 ## Run
@@ -15,5 +15,5 @@ podman run -it --rm \
   --userns=keep-id:uid=1000,gid=1000 \
   -v "$(pwd):/workspace" \
   -w /workspace \
-  cca-grok-build
+  cca-claude-code
 ```

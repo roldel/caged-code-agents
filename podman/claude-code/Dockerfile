@@ -1,4 +1,4 @@
-# Grok Build — minimal sandboxed image
+# Claude Code — minimal sandboxed image
 FROM python:slim-bookworm
 
 # Install dependencies
@@ -14,10 +14,10 @@ RUN groupadd -g 1000 agent && \
 
 USER agent
 
-# Install the Grok Build CLI
-RUN curl -fsSL https://x.ai/cli/install.sh | bash
+# Install the Claude Code CLI
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
-ENV PATH="/home/agent/.grok/bin:${PATH}"
+ENV PATH="/home/agent/.local/bin:${PATH}"
 
 # Sign in interactively on first run; nothing baked into the image
-CMD ["grok"]
+CMD ["claude"]
