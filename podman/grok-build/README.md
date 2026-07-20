@@ -11,5 +11,9 @@ podman build -t cca-grok-build .
 From the project you want the agent to work on:
 
 ```sh
- run -it --rm --userns=keep-id -v "$(pwd):/workspace"  -w /workspace cca-grok-build
+podman run -it --rm \
+  --userns=keep-id:uid=1000,gid=1000 \
+  -v "$(pwd):/workspace" \
+  -w /workspace \
+  cca-grok-build
 ```

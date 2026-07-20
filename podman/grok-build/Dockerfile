@@ -1,7 +1,7 @@
 # Grok Build — minimal sandboxed image
 FROM python:slim-bookworm
 
-# Installer + agent need these; the slim image ships almost nothing
+# Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -9,12 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user owning the workspace
-RUN useradd -m -s /bin/bash agent && \
-    mkdir -p /workspace && \
-    chown -R agent:agent /workspace
+RUN groupadd -g 1000 agent && \
+    useradd -m -u 1000 -g 1000 -s /bin/bash agent
 
 USER agent
-WORKDIR /workspace
 
 # Install the Grok Build CLI
 RUN curl -fsSL https://x.ai/cli/install.sh | bash
