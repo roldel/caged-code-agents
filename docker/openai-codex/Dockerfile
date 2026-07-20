@@ -1,5 +1,5 @@
 # Codex CLI — minimal sandboxed image
-FROM python:3.14-slim-bookworm
+FROM python:slim-bookworm
 
 ARG USER_ID
 ARG GROUP_ID

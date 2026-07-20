@@ -26,7 +26,7 @@ RUN curl -fsSL https://opencode.ai/install | bash
 ENV PATH="/home/agent/.opencode/bin:${PATH}"
 
 # Entrypoint builds opencode.json at container start from OPENCODE_MODELS
-COPY --chown=agent:agent entrypoint.sh /home/agent/entrypoint.sh
+COPY --chown=${USER_ID}:${GROUP_ID} entrypoint.sh /home/agent/entrypoint.sh
 RUN chmod +x /home/agent/entrypoint.sh
 
 ENTRYPOINT ["/home/agent/entrypoint.sh"]
