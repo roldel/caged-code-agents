@@ -3,7 +3,10 @@
 ## Build
 
 ```sh
-docker build -t cca-openai-codex .
+docker build \
+  --build-arg USER_ID=$(id -u) \
+  --build-arg GROUP_ID=$(id -g) \
+  -t cca-openai-codex .
 ```
 
 ## Run
@@ -11,5 +14,8 @@ docker build -t cca-openai-codex .
 From the project you want the agent to work on:
 
 ```sh
-docker run -it --rm -v "$(pwd):/workspace" -w /workspace cca-openai-codex
+docker run -it --rm \
+  -v "$(pwd):/workspace" \
+  -w /workspace \
+  cca-openai-codex
 ```
