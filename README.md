@@ -4,6 +4,40 @@
 
 Run a coding agent against your real project files — while it stays locked in a container that can only see one bind-mounted directory. Cloud CLIs (Claude Code, Codex, Grok Build) and a local Ollama-backed option (OpenCode) are all included, each available as both a Docker build and a Podman build.
 
+## Quick access
+
+Build and run commands live in each leaf README. Pick an agent and engine:
+
+### Cloud-backed
+
+Sign in interactively on first launch. Containers are disposable, so re-auth each run is expected.
+
+| Agent | Docker | Podman |
+|-------|--------|--------|
+| Claude Code | [README](docker/claude-code/README.md) | [README](podman/claude-code/README.md) |
+| Codex CLI | [README](docker/openai-codex/README.md) | [README](podman/openai-codex/README.md) |
+| Grok Build | [README](docker/grok-build/README.md) | [README](podman/grok-build/README.md) |
+
+### Local (Ollama)
+
+Requires [Ollama](https://ollama.com/) on the host with models already pulled (`ollama list`). The container only registers model IDs with OpenCode; pick models at run time — no image rebuild.
+
+| Agent | Docker | Podman |
+|-------|--------|--------|
+| OpenCode | [README](local-ai/opencode/docker/README.md) | [README](local-ai/opencode/podman/README.md) |
+
+New here? Read on below. Returning? Use the table above and go.
+
+---
+
+| | |
+|---|---|
+| [Why?](#why) | Why sandbox coding agents at all |
+| [Project structure](#project-structure) | How the repo is laid out |
+| [Permission strategy](#permission-strategy) | Docker vs Podman ownership model |
+| [Quick start](#quick-start) | One worked example of the build/run loop |
+| [Notes](#notes) | Auth, models, and mount scope |
+
 ---
 
 ## Why?
@@ -49,40 +83,24 @@ Cloud agents are grouped by engine first (`docker/`, `podman/`) since each is ju
 
 ## Permission strategy
 
-Both engines end up with the same result — the agent runs as a non-root user, and files it touches on your bind-mounted project stay owned by you on the host — but they get there differently:
+We map your Linux user into the container so the agent runs as you on the bind-mounted project — files it creates or edits stay owned by you on the host.
 
-- **Docker (`docker/`, `local-ai/opencode/docker/`)** — the image is built per host user. `docker build` takes `--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)`, and the Dockerfile fails loudly if either is missing. The in-container `agent` user is created with those exact IDs, so it matches your host user 1:1. Trade-off: the image is tied to whoever built it — a different host user needs their own build.
-- **Podman (`podman/`, `local-ai/opencode/podman/`)** — the image bakes in a fixed `agent` user at `uid=1000`/`gid=1000`, no build-args needed. At run time, `--userns=keep-id:uid=1000,gid=1000` tells Podman's rootless user namespace to map *your* invoking host user onto that in-container UID/GID. Trade-off: one image works for any host user, but it always relies on that run-time flag being present.
+Docker and Podman both aim at that, but they wire it up differently.
 
-Pick whichever fits how you build/distribute images; both are wired up identically otherwise.
+**Docker binds your user at image build. Podman binds your user at container run.**
 
----
+- **Docker** cannot remap your host UID/GID onto the in-container `agent` user when you start the container. So the image is built with your IDs baked in (`--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)`; required, or the build fails). That matches the user who built the image. If another host user runs the same image later, the container still starts, but ownership on the mount may not match them — they need their own build.
+- **Podman** can map the user who starts the container onto a fixed in-image `agent` (`uid=1000`/`gid=1000`) at run time via `--userns=keep-id:uid=1000,gid=1000`. One image works for any host user; that flag must always be present on `podman run`.
 
-## Agents
-
-### Cloud-backed
-
-| Agent | Docker | Podman | Docker tag | Podman tag | CLI |
-|-------|--------|--------|------------|------------|-----|
-| Claude Code | `docker/claude-code/` | `podman/claude-code/` | `cca-claude-code` | `localhost/cca-claude-code:latest` | `claude` |
-| Codex CLI | `docker/openai-codex/` | `podman/openai-codex/` | `cca-openai-codex` | `localhost/cca-openai-codex:latest` | `codex` |
-| Grok Build | `docker/grok-build/` | `podman/grok-build/` | `cca-grok-build` | `localhost/cca-grok-build:latest` | `grok` |
-
-Sign in interactively on first launch. Containers are disposable, so re-auth each run is expected.
-
-### Local (Ollama)
-
-| Agent | Docker | Podman | Docker tag | Podman tag | CLI |
-|-------|--------|--------|------------|------------|-----|
-| OpenCode | `local-ai/opencode/docker/` | `local-ai/opencode/podman/` | `cca-opencode` | `localhost/cca-opencode:latest` | `opencode` |
-
-Talks to Ollama on the host. Models are selected at container-run time — no image rebuild to switch or add models. Model IDs must already exist in your host's Ollama (`ollama list`); the container only registers them with OpenCode.
+Same goal either way. Choose the engine that fits how you build and share images.
 
 ---
 
 ## Quick start
 
-### Cloud agent, Docker (example: Claude Code)
+One example so the loop is obvious. For every other agent/engine, use [Quick access](#quick-access).
+
+### Example: Claude Code on Docker
 
 ```sh
 cd docker/claude-code
@@ -91,90 +109,14 @@ docker build \
   --build-arg GROUP_ID=$(id -g) \
   -t cca-claude-code .
 
+# From the project you want the agent to edit:
 docker run -it --rm \
   -v "$(pwd):/workspace" \
   -w /workspace \
   cca-claude-code
 ```
 
-Same pattern for Codex and Grok — swap the directory and image tag (`docker/openai-codex` → `cca-openai-codex`, `docker/grok-build` → `cca-grok-build`).
-
-### Cloud agent, Podman (example: Claude Code)
-
-```sh
-cd podman/claude-code
-podman build -t localhost/cca-claude-code:latest .
-
-podman run -it --rm \
-  --pull=never \
-  --userns=keep-id:uid=1000,gid=1000 \
-  -v "$(pwd):/workspace" \
-  -w /workspace \
-  localhost/cca-claude-code:latest
-```
-
-Same pattern for Codex and Grok — swap the directory and image tag (`podman/openai-codex` → `localhost/cca-openai-codex:latest`, `podman/grok-build` → `localhost/cca-grok-build:latest`). The `localhost/` prefix and `:latest` tag keep Podman from mis-resolving the image name at run time; `--pull=never` stops it from trying to fetch a remote image of the same name.
-
-Sign in when prompted, on either engine.
-
-### Local agent (OpenCode + Ollama)
-
-Requires [Ollama](https://ollama.com/) running on the host with the models you want already pulled.
-
-**Docker:**
-
-```sh
-cd local-ai/opencode/docker
-docker build \
-  --build-arg USER_ID=$(id -u) \
-  --build-arg GROUP_ID=$(id -g) \
-  -t cca-opencode .
-
-# Default model (ornith:9b)
-docker run -it --rm \
-  --add-host=host.docker.internal:host-gateway \
-  -v "$(pwd):/workspace" \
-  -w /workspace \
-  cca-opencode
-
-# Or pick models at runtime (switch with /model in the TUI)
-docker run -it --rm \
-  --add-host=host.docker.internal:host-gateway \
-  -e OPENCODE_MODELS="ornith:32k,gpt-oss:20b-32k" \
-  -e OPENCODE_DEFAULT_MODEL="ornith:32k" \
-  -v "$(pwd):/workspace" \
-  -w /workspace \
-  cca-opencode
-```
-
-**Podman:**
-
-```sh
-cd local-ai/opencode/podman
-podman build -t localhost/cca-opencode:latest .
-
-# Default model (ornith:9b)
-podman run -it --rm \
-  --pull=never \
-  --userns=keep-id:uid=1000,gid=1000 \
-  --add-host=host.docker.internal:host-gateway \
-  -v "$(pwd):/workspace" \
-  -w /workspace \
-  localhost/cca-opencode:latest
-
-# Or pick models at runtime (switch with /model in the TUI)
-podman run -it --rm \
-  --pull=never \
-  --userns=keep-id:uid=1000,gid=1000 \
-  --add-host=host.docker.internal:host-gateway \
-  -e OPENCODE_MODELS="ornith:32k,gpt-oss:20b-32k" \
-  -e OPENCODE_DEFAULT_MODEL="ornith:32k" \
-  -v "$(pwd):/workspace" \
-  -w /workspace \
-  localhost/cca-opencode:latest
-```
-
-`--add-host=host.docker.internal:host-gateway` lets the container reach Ollama on the host, on both engines. Override the URL with `OLLAMA_BASE_URL` if needed.
+Same idea everywhere else: `cd` into the leaf directory, build the image, then `run` with your project bind-mounted at `/workspace`. Podman builds use fixed tags under `localhost/…:latest`, `--userns=keep-id:uid=1000,gid=1000`, and usually `--pull=never`. Local OpenCode also needs host Ollama reachability (`--add-host=host.docker.internal:host-gateway`); see its leaf READMEs for model env vars.
 
 ---
 
@@ -185,4 +127,4 @@ podman run -it --rm \
 - **Scope is the mount.** Anything outside the bind-mounted path is not available to the agent on the host filesystem.
 - **Docker or Podman required.** Build and run with whichever engine's directory you pick — see [Permission strategy](#permission-strategy) for how each one keeps the container's non-root user in sync with yours.
 
-Pick an agent directory under `docker/`, `podman/`, or `local-ai/`, build, and launch from the repo you want edited. That's the whole loop.
+Pick an agent under [Quick access](#quick-access), open its README, build, and launch from the repo you want edited. That's the whole loop.
