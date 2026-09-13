@@ -25,11 +25,15 @@ those should be the default:
       1.  ornith:9b       9.4B    Q4_K_M  5.3GB
       2.  gpt-oss:20b     20.9B   MXFP4   13.3GB
       3.  gemma4:12b-mlx  12.2B   Q4_0    7.5GB
-    Select models to expose (comma-separated numbers, e.g. 1,3): 1,3
+    Select models to expose (comma-separated numbers, 'a' for all) [a]: 1,3
     Selected models:
       1) ornith:9b
       2) gpt-oss:20b
     Default model number [1]: 2
+
+Press Enter (or type `a`/`all`) to expose every installed model instead of
+picking numbers — registering a model with OpenCode doesn't load it, Ollama
+only loads on first actual use, so there's no cost to exposing everything.
 
 Columns are aligned to whatever's actually installed — all rows are gathered
 before anything is printed, so column widths fit the widest value rather than

@@ -85,24 +85,31 @@ if [ -z "$OPENCODE_MODELS" ]; then
       "$size_width" "${row_size[$i]}" >&2
   done
 
-  read -rp "Select models to expose (comma-separated numbers, e.g. 1,3): " selection
+  read -rp "Select models to expose (comma-separated numbers, 'a' for all) [a]: " selection
 
   selected=()
-  IFS=',' read -ra raw_choices <<< "$selection"
-  for choice in "${raw_choices[@]}"; do
-    choice="$(printf '%s' "$choice" | tr -d '[:space:]')"
-    [ -z "$choice" ] && continue
-    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#available[@]}" ]; then
-      echo "entrypoint: '$choice' isn't one of the listed numbers" >&2
-      exit 1
-    fi
-    model="${available[$((choice - 1))]}"
-    already_selected=0
-    for existing in "${selected[@]:-}"; do
-      [ "$existing" = "$model" ] && already_selected=1
+  trimmed_selection="$(printf '%s' "$selection" | tr -d '[:space:]')"
+  if [ -z "$trimmed_selection" ] || [ "${trimmed_selection,,}" = "a" ] || [ "${trimmed_selection,,}" = "all" ]; then
+    # Registering a model with OpenCode doesn't load it — Ollama only loads
+    # on first actual use — so exposing everything by default costs nothing.
+    selected=("${available[@]}")
+  else
+    IFS=',' read -ra raw_choices <<< "$selection"
+    for choice in "${raw_choices[@]}"; do
+      choice="$(printf '%s' "$choice" | tr -d '[:space:]')"
+      [ -z "$choice" ] && continue
+      if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#available[@]}" ]; then
+        echo "entrypoint: '$choice' isn't one of the listed numbers" >&2
+        exit 1
+      fi
+      model="${available[$((choice - 1))]}"
+      already_selected=0
+      for existing in "${selected[@]:-}"; do
+        [ "$existing" = "$model" ] && already_selected=1
+      done
+      [ "$already_selected" -eq 0 ] && selected+=("$model")
     done
-    [ "$already_selected" -eq 0 ] && selected+=("$model")
-  done
+  fi
 
   if [ "${#selected[@]}" -eq 0 ]; then
     echo "entrypoint: no models selected" >&2
