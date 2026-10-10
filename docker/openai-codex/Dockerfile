@@ -7,12 +7,13 @@ ARG GROUP_ID
 RUN test -n "${USER_ID}" && test -n "${GROUP_ID}" || \
     { echo >&2 "ERROR: build with --build-arg USER_ID=\$(id -u) --build-arg GROUP_ID=\$(id -g)"; exit 1; }
 
-# Installer + agent need these; gawk is required by the Codex installer
+# Installer + agent need these; gawk and procps are required by the Codex installer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     git \
     gawk \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user matching the host UID/GID (fail-loud args above)
