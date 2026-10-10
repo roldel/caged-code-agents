@@ -1,12 +1,14 @@
 # Codex CLI — minimal sandboxed image
 FROM python:3.14-slim-bookworm
 
-# Install dependencies (gawk is required by the Codex installer)
+# Install dependencies. gawk is required by the Codex installer.
+# procps provides ps, which the pid-managed app-server invokes at startup.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     git \
     gawk \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user owning the workspace
