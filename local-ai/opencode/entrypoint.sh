@@ -20,8 +20,10 @@ if [ -z "$OPENCODE_MODELS" ]; then
     exit 1
   fi
 
-  # Native Ollama API lives one level up from the OpenAI-compatible /v1 path
-  ollama_api_root="${OLLAMA_BASE_URL%/v1}"
+  # Native Ollama API lives one level up from the OpenAI-compatible /v1 path.
+  # Strip a trailing slash first so "…/v1/" strips down to "…", not "…/v1".
+  ollama_api_root="${OLLAMA_BASE_URL%/}"
+  ollama_api_root="${ollama_api_root%/v1}"
 
   tags_json=$(curl -fsS "${ollama_api_root}/api/tags") || {
     echo "entrypoint: couldn't reach Ollama at ${ollama_api_root}/api/tags" >&2
