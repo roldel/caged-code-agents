@@ -71,11 +71,12 @@ podman/                 Podman builds — same cloud-backed agents
 
 local-ai/               Ollama-backed local agents, grouped by agent then engine
   opencode/
+    entrypoint.sh
     docker/
     podman/
 ```
 
-Each leaf directory is self-contained: a `Dockerfile` and a short `README.md` with the exact build/run commands for that agent and engine. `local-ai/opencode/*/` additionally ships an `entrypoint.sh` that discovers installed Ollama models, lets you pick which to expose, and builds OpenCode's provider config at container start.
+Each leaf directory is self-contained: a `Dockerfile` and a short `README.md` with the exact build/run commands for that agent and engine. The one exception is `local-ai/opencode/`, where the Docker and Podman builds share a single `entrypoint.sh` (one level up from both leaf directories) that discovers installed Ollama models, lets you pick which to expose, and builds OpenCode's provider config at container start — so its leaf READMEs build with `-f <engine>/Dockerfile` from `local-ai/opencode/` instead of `cd`-ing straight into the leaf.
 
 Cloud agents are grouped by engine first (`docker/`, `podman/`) since each is just one CLI per engine. Local agents are grouped by agent first (`local-ai/opencode/`) since a local agent's Docker and Podman builds share the same Ollama-facing logic — and it keeps room to add more local agents later without the engine split scattering them.
 
@@ -116,7 +117,7 @@ docker run -it --rm \
   cca-claude-code
 ```
 
-Same idea everywhere else: `cd` into the leaf directory, build the image, then `run` with your project bind-mounted at `/workspace`. Podman builds use fixed tags under `localhost/…:latest`, `--userns=keep-id:uid=1000,gid=1000`, and usually `--pull=never`. Local OpenCode also needs host Ollama reachability (`--add-host=host.docker.internal:host-gateway`); see its leaf README for model selection — an interactive picker by default, or `OPENCODE_MODELS`/`OPENCODE_DEFAULT_MODEL` for scripted runs.
+Same idea everywhere else: `cd` into the leaf directory, build the image, then `run` with your project bind-mounted at `/workspace`. Podman builds use fixed tags under `localhost/…:latest`, `--userns=keep-id:uid=1000,gid=1000`, and usually `--pull=never`. Local OpenCode also needs host Ollama reachability (`--add-host=host.docker.internal:host-gateway`); see its leaf README for model selection — an interactive picker by default, or `OPENCODE_MODELS`/`OPENCODE_DEFAULT_MODEL` for scripted runs. OpenCode's build step differs slightly: `cd local-ai/opencode` (not the leaf) and pass `-f docker/Dockerfile` or `-f podman/Dockerfile`, since it shares `entrypoint.sh` across both engines.
 
 ---
 

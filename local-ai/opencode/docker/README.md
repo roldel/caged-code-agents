@@ -4,7 +4,12 @@ Ollama-backed OpenCode sandbox. No rebuild needed to switch or add models.
 
 ## Build
 
+`entrypoint.sh` is shared with the Podman build and lives one level up, so
+build from `local-ai/opencode/` with `-f` pointing at this leaf's Dockerfile:
+
+    cd local-ai/opencode
     docker build \
+      -f docker/Dockerfile \
       --build-arg USER_ID=$(id -u) \
       --build-arg GROUP_ID=$(id -g) \
       -t cca-opencode .
