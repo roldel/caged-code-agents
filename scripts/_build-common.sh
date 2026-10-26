@@ -12,7 +12,8 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 #   parent directory so both engines can share one entrypoint.sh (see
 #   local-ai/opencode/*/README.md).
 build() {
-  local engine="$1" dir="$2" tag="$3" dockerfile="${4:-$dir/Dockerfile}" context="${5:-$dir}"
+  local engine="$1" dir="$2" tag="$3"
+  local dockerfile="${4:-$dir/Dockerfile}" context="${5:-$dir}"
   echo "==> [$engine] building $tag (--no-cache)"
   if [ "$engine" = "docker" ]; then
     docker build --no-cache \
