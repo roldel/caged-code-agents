@@ -37,6 +37,7 @@ New here? Read on below. Returning? Use the table above and go.
 | [Permission strategy](#permission-strategy) | Docker vs Podman ownership model |
 | [Quick start](#quick-start) | One worked example of the build/run loop |
 | [Notes](#notes) | Auth, models, and mount scope |
+| [Rebuilding images](#rebuilding-images) | Refresh every image for an engine in one command |
 
 ---
 
@@ -74,6 +75,8 @@ local-ai/               Ollama-backed local agents, grouped by agent then engine
     entrypoint.sh
     docker/
     podman/
+
+scripts/                Repo-level helpers: build-docker-images.sh, build-podman-images.sh
 ```
 
 Each leaf directory is self-contained: a `Dockerfile` and a short `README.md` with the exact build/run commands for that agent and engine. The one exception is `local-ai/opencode/`, where the Docker and Podman builds share a single `entrypoint.sh` (one level up from both leaf directories) that discovers installed Ollama models, lets you pick which to expose, and builds OpenCode's provider config at container start — so its leaf READMEs build with `-f <engine>/Dockerfile` from `local-ai/opencode/` instead of `cd`-ing straight into the leaf.
@@ -127,5 +130,15 @@ Same idea everywhere else: `cd` into the leaf directory, build the image, then `
 - **Local models live on the host.** OpenCode registers model IDs only; pull them with Ollama yourself first.
 - **Scope is the mount.** Anything outside the bind-mounted path is not available to the agent on the host filesystem.
 - **Docker or Podman required.** Build and run with whichever engine's directory you pick — see [Permission strategy](#permission-strategy) for how each one keeps the container's non-root user in sync with yours.
+- **Base images are intentionally unpinned.** Every Dockerfile floats on `python:slim-bookworm` rather than a pinned version, so a `--no-cache` rebuild always picks up current Debian security patches. None of these images run Python application code — it's just the lightweight Debian base each CLI installer runs on top of — so the usual breaking-change risk of floating tags doesn't really apply here. Pin a specific tag yourself if you need fully reproducible builds.
+
+## Rebuilding images
+
+`scripts/build-docker-images.sh` and `scripts/build-podman-images.sh` each rebuild every image for their engine with `--no-cache`, so a fresh CLI install (or base image patch) doesn't require `cd`-ing into each leaf directory and remembering its build command. They're separate scripts (sharing an internal `scripts/_build-common.sh`) so you only pay the rebuild time for the engine you actually use:
+
+```sh
+scripts/build-docker-images.sh
+scripts/build-podman-images.sh
+```
 
 Pick an agent under [Quick access](#quick-access), open its README, build, and launch from the repo you want edited. That's the whole loop.

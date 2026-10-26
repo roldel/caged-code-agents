@@ -1,5 +1,5 @@
 # Codex CLI — minimal sandboxed image
-FROM python:3.14-slim-bookworm
+FROM python:slim-bookworm
 
 # Install dependencies. gawk and procps are required by the Codex installer.
 RUN apt-get update && apt-get install -y --no-install-recommends \
