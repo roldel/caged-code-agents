@@ -1,7 +1,8 @@
 #!/bin/bash
-# Rebuilds every Podman image in this repo from scratch (--no-cache).
+# Rebuilds the cloud Podman images (Claude Code, Codex CLI, Grok Build)
+# from scratch (--no-cache). OpenCode is scripts/build-local-ai-images.sh.
 set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_build-common.sh"
 
-build_all_images podman
+build_cloud_images podman

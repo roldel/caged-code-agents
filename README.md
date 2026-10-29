@@ -37,7 +37,7 @@ New here? Read on below. Returning? Use the table above and go.
 | [Permission strategy](#permission-strategy) | Docker vs Podman ownership model |
 | [Quick start](#quick-start) | One worked example of the build/run loop |
 | [Notes](#notes) | Auth, models, and mount scope |
-| [Rebuilding images](#rebuilding-images) | Refresh every image for an engine in one command |
+| [Rebuilding images](#rebuilding-images) | Refresh cloud images per engine, or OpenCode on its own |
 
 ---
 
@@ -76,7 +76,7 @@ local-ai/               Ollama-backed local agents, grouped by agent then engine
     docker/
     podman/
 
-scripts/                Repo-level helpers: build-docker-images.sh, build-podman-images.sh
+scripts/                Repo-level helpers: build-docker-images.sh, build-podman-images.sh, build-local-ai-images.sh
 ```
 
 Each leaf directory is self-contained: a `Dockerfile` and a short `README.md` with the exact build/run commands for that agent and engine. The one exception is `local-ai/opencode/`, where the Docker and Podman builds share a single `entrypoint.sh` (one level up from both leaf directories) that discovers installed Ollama models, lets you pick which to expose, and builds OpenCode's provider config at container start — so its leaf READMEs build with `-f <engine>/Dockerfile` from `local-ai/opencode/` instead of `cd`-ing straight into the leaf.
@@ -134,11 +134,14 @@ Same idea everywhere else: `cd` into the leaf directory, build the image, then `
 
 ## Rebuilding images
 
-`scripts/build-docker-images.sh` and `scripts/build-podman-images.sh` each rebuild every image for their engine with `--no-cache`, so a fresh CLI install (or base image patch) doesn't require `cd`-ing into each leaf directory and remembering its build command. They're separate scripts (sharing an internal `scripts/_build-common.sh`) so you only pay the rebuild time for the engine you actually use:
+Three helpers rebuild images with `--no-cache`, so a fresh CLI install (or base image patch) doesn't require `cd`-ing into each leaf directory and remembering its build command. They share `scripts/_build-common.sh`.
+
+Cloud agents are split by engine, so you only pay the rebuild time for the engine you use. OpenCode is its own script because that image takes longer to install. It builds the Docker image, the Podman image, or both, depending on which engines are on `PATH`. It fails if neither engine is installed, or if a build for an installed engine fails.
 
 ```sh
-scripts/build-docker-images.sh
-scripts/build-podman-images.sh
+scripts/build-docker-images.sh      # Claude Code, Codex CLI, Grok Build
+scripts/build-podman-images.sh      # same three, tagged localhost/…:latest
+scripts/build-local-ai-images.sh    # OpenCode on every installed engine
 ```
 
 Pick an agent under [Quick access](#quick-access), open its README, build, and launch from the repo you want edited. That's the whole loop.
